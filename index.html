@@ -80,6 +80,8 @@
             var mapDiv = document.getElementById('map');
                 mapDiv.style.height = '100%'
                 map.resize();
+
+                map.setFilter('unclustered-point-highlighted', ['in','id','']);
         }
 
         map.on('load', function () {
@@ -160,6 +162,27 @@
                 }
             });
 
+            map.addLayer(
+                {
+                    'id': 'unclustered-point-highlighted',
+                    'type': 'circle',
+                    'source': 'cars',
+                    'paint': {
+                        'circle-color': [
+                            'step',
+                            ['get', 'last_x_min'],
+                            '#11b4da',
+                            41,
+                            '#b6edf9',
+                        ],
+                        'circle-radius': 10,
+                        'circle-stroke-width': 3,
+                        'circle-stroke-color': 'red',
+                    },
+                    'filter': ['in', 'id', '']
+                }
+            ); // Place polygon under these labels.
+
             // inspect a cluster on click
             map.on('click', 'clusters', function (e) {
                 var features = map.queryRenderedFeatures(e.point, {
@@ -188,6 +211,10 @@
                 var car_deets_text = e.features[0].properties.make + " "
                     + e.features[0].properties.model + " "
                     + e.features[0].properties.year;
+
+                // highlight the clicked element????
+                var filter = ['in', 'id', e.features[0].properties.id];
+                map.setFilter('unclustered-point-highlighted', filter);
                     
                 // resize map
                 var mapDiv = document.getElementById('map');
