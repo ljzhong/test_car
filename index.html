@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>A map</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.2.0/mapbox-gl.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        #legend {
+            position: fixed;
+            top: 0;
+            right: 0;
+            font-family: "DIN Offc Pro Medium", "Arial Unicode MS Bold";
+            background-color: rgba(255,255,255, 0.7);
+            margin:10px;
+            padding:5px;
+        }
+        #details {
+            overflow-y: scroll;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height:40%;
+            transition: all 0.2s ease-in-out;
+
+            
+        }
+        .hide {
+            height: 0 !important;
+        }
+        #close-modal-button {
+
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div id="legend">
+        <img src="https://raw.githubusercontent.com/ljzhong/test_car/main/within_30.svg" alt="Within 30min"> &#60;30 min
+        <br><img src="https://raw.githubusercontent.com/ljzhong/test_car/main/within_60.svg" alt="Within 60min"> &#60;60 min
+    </div>
+    <div id="details" class="hide">
+        <div onclick="closeModal();" id="close-modal-button">X</div>
+        <i>Reported <span id="reported-min">5</span> min. ago.</i>
+        <br> <a id="nav-link" src="geo:323482,4306480">Navigate To</a>
+        <br> <span>WA ABC-123</span>
+        <br> <span id="update-car"></span>
+        <br> <img id="go-img" src="https://raw.githubusercontent.com/ljzhong/test_car/main/manchego.JPG" width="100%">
+        <br> <a id="goog-img" src="https://www.google.com/search?q=nissan+ultima+2005&tbm=isch">Search Google Images</a>
+    </div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoibGluemgiLCJhIjoiY2tudXUwdTJ3MGJ2dzJwcGlwYjB6MmdpNiJ9.sGnye4x-ae89rMHUmpKr2Q';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11', 
+            center: [-117.7388366, 34.0657289], // ZOOM TO WHERE THE USER IS
+            zoom: 8
+        });
+
+        function closeModal() {
+            var elem = document.getElementById("details");
+            elem.classList.add('hide');
+
+            var mapDiv = document.getElementById('map');
+                mapDiv.style.height = '100%'
+                map.resize();
+        }
+
+        map.on('load', function () {
+            map.addSource('cars', {
+                type: 'geojson',
+                data:
+                    'https://raw.githubusercontent.com/ljzhong/test_car/main/test.geojson',
+                cluster: true,
+                clusterMaxZoom: 10,
+            });
+
+            map.addLayer({
+                id: 'clusters',
+                type: 'circle',
+                source: 'cars',
+                filter: ['has', 'point_count'],
+                paint: {
+                    // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+                    // with three steps to implement three types of circles:
+                    //   * Yellow, 30px circles when point count is less than 20
+                    //   * Yellow (darker), 40px circles when point count is between 20 and 40
+                    //   * Yellow (darkest), 50px circles when point count is greater than or equal to 50
+                    'circle-color': [
+                        'step',
+                        ['get', 'point_count'],
+                        '#ffce6c',
+                        20,
+                        '#ffc653',
+                        50,
+                        '#ffb520'
+                    ],
+                    'circle-radius': [
+                        'step',
+                        ['get', 'point_count'],
+                        30,
+                        20,
+                        40,
+                        50,
+                        50
+                    ]
+                }
+            });
+
+            map.addLayer({
+                id: 'cluster-count',
+                type: 'symbol',
+                source: 'cars',
+                filter: ['has', 'point_count'],
+                layout: {
+                    'text-field': '{point_count_abbreviated}',
+                    'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                    'text-size': 14
+                }
+            });
+
+            map.addLayer({
+                id: 'unclustered-point',
+                type: 'circle',
+                source: 'cars',
+                filter: ['!', ['has', 'point_count']],
+                paint: {
+                    'circle-color': [
+                        'step',
+                        ['get', 'last_x_min'],
+                        '#11b4da',
+                        41,
+                        '#b6edf9',
+                    ],
+                    'circle-radius': 10,
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': [
+                        'step',
+                        ['get', 'last_x_min'],
+                        '#444444',
+                        31,
+                        '#a9a9a9',
+                    ]
+                }
+            });
+
+            // inspect a cluster on click
+            map.on('click', 'clusters', function (e) {
+                var features = map.queryRenderedFeatures(e.point, {
+                    layers: ['clusters']
+                });
+                var clusterId = features[0].properties.cluster_id;
+                map.getSource('cars').getClusterExpansionZoom(
+                    clusterId,
+                    function (err, zoom) {
+                        if (err) return;
+
+                        map.easeTo({
+                            center: features[0].geometry.coordinates,
+                            zoom: zoom+1
+                        });
+                    }
+                );
+            });
+
+            // When a click event occurs on a feature in
+            // the unclustered-point layer, detect if that point 
+            // should be zoomed up to top half of the screen. 
+            // Then, pop up details on bottom half of screen
+            map.on('click', 'unclustered-point', function (e) {
+                var coordinates = e.features[0].geometry.coordinates.slice();
+                var car_deets_text = e.features[0].properties.make + " "
+                    + e.features[0].properties.model + " "
+                    + e.features[0].properties.year;
+                    
+                // resize map
+                var mapDiv = document.getElementById('map');
+                    mapDiv.style.height = '60%'
+                    map.resize();
+                    map.easeTo({ center: coordinates });
+                // open up the modal
+                var car_deets = document.getElementById("update-car").innerHTML=car_deets_text;
+                var modal = document.getElementById("details");
+                modal.classList.remove('hide');
+
+            });
+
+            map.on('mouseenter', 'clusters', function () {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            map.on('mouseleave', 'clusters', function () {
+                map.getCanvas().style.cursor = '';
+            });
+        });
+    </script>
+
+</body>
+
+</html>
