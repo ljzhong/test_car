@@ -51,7 +51,8 @@
 <body>
     <div id="map"></div>
     <div id="legend">
-        <img src="https://raw.githubusercontent.com/ljzhong/test_car/main/within_30.svg" alt="Within 30min"> &#60;30 min
+        <img src="https://raw.githubusercontent.com/ljzhong/test_car/main/me.svg" alt="You are here"> &#60;Your location
+        <br><img src="https://raw.githubusercontent.com/ljzhong/test_car/main/within_30.svg" alt="Within 30min"> &#60;30 min
         <br><img src="https://raw.githubusercontent.com/ljzhong/test_car/main/within_60.svg" alt="Within 60min"> &#60;60 min
     </div>
     <div id="details" class="hide">
@@ -66,10 +67,13 @@
 
     <script>
         mapboxgl.accessToken = 'pk.eyJ1IjoibGluemgiLCJhIjoiY2tudXUwdTJ3MGJ2dzJwcGlwYjB6MmdpNiJ9.sGnye4x-ae89rMHUmpKr2Q';
+
+        var user_location = [-117.7388366, 34.0657289]; // ZOOM TO WHERE THE USER IS
+
         var map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v11', 
-            center: [-117.7388366, 34.0657289], // ZOOM TO WHERE THE USER IS
+            center: user_location, 
             zoom: 8
         });
 
@@ -181,7 +185,31 @@
                     },
                     'filter': ['in', 'id', '']
                 }
-            ); // Place polygon under these labels.
+            ); 
+
+
+            map.addLayer(
+                {
+                    'id': 'unclustered-point-me',
+                    'type': 'circle',
+                    'source': {
+                        "type": "geojson",
+                        "data": {
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": user_location
+                            }
+                        }
+                    },
+                    'paint': {
+                        'circle-color': '#ffa500',
+                        'circle-radius': 10,
+                        'circle-stroke-width': 2,
+                        'circle-stroke-color': '#444444',
+                    }
+                }
+            ); 
 
             // inspect a cluster on click
             map.on('click', 'clusters', function (e) {
