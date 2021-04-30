@@ -51,9 +51,8 @@
 <body>
     <div id="map"></div>
     <div id="legend">
-        <img src="https://raw.githubusercontent.com/ljzhong/test_car/main/me.svg" alt="You are here"> &#60;Your location
-        <br><img src="https://raw.githubusercontent.com/ljzhong/test_car/main/within_30.svg" alt="Within 30min"> &#60;30 min
-        <br><img src="https://raw.githubusercontent.com/ljzhong/test_car/main/within_60.svg" alt="Within 60min"> &#60;60 min
+        <img src="https://raw.githubusercontent.com/ljzhong/test_car/main/within_30.svg" alt="Within 30min"> w/in 30 min
+        <br><img src="https://raw.githubusercontent.com/ljzhong/test_car/main/within_60.svg" alt="Within 60min"> w/in 90 min
     </div>
     <div id="details" class="hide">
         <div onclick="closeModal();" id="close-modal-button">X</div>
@@ -151,7 +150,7 @@
                         'step',
                         ['get', 'last_x_min'],
                         '#11b4da',
-                        41,
+                        31,
                         '#b6edf9',
                     ],
                     'circle-radius': 10,
@@ -176,7 +175,7 @@
                             'step',
                             ['get', 'last_x_min'],
                             '#11b4da',
-                            41,
+                            31,
                             '#b6edf9',
                         ],
                         'circle-radius': 10,
@@ -187,29 +186,11 @@
                 }
             ); 
 
-
-            map.addLayer(
-                {
-                    'id': 'unclustered-point-me',
-                    'type': 'circle',
-                    'source': {
-                        "type": "geojson",
-                        "data": {
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "Point",
-                                "coordinates": user_location
-                            }
-                        }
-                    },
-                    'paint': {
-                        'circle-color': '#ffa500',
-                        'circle-radius': 10,
-                        'circle-stroke-width': 2,
-                        'circle-stroke-color': '#444444',
-                    }
-                }
-            ); 
+            var marker = new mapboxgl.Marker({
+            color: "#ffa500",
+            rotation: 45
+            }).setLngLat(user_location)
+            .addTo(map);
 
             // inspect a cluster on click
             map.on('click', 'clusters', function (e) {
