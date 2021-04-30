@@ -56,12 +56,11 @@
     </div>
     <div id="details" class="hide">
         <div onclick="closeModal();" id="close-modal-button">X</div>
-        <i>Reported <span id="reported-min">5</span> min. ago.</i>
-        <br> <a id="nav-link" src="geo:323482,4306480">Navigate To</a>
-        <br> <span>WA ABC-123</span>
+        <i>Reported <span id="min-ago"></span> min. ago.</i>
+        <br> <a id="nav-link">Navigate To</a>
+        <br> <span id="lic-plate"></span>
         <br> <span id="update-car"></span>
-        <br> <img id="go-img" src="https://raw.githubusercontent.com/ljzhong/test_car/main/manchego.JPG" width="100%">
-        <br> <a id="goog-img" src="https://www.google.com/search?q=nissan+ultima+2005&tbm=isch">Search Google Images</a>
+        <br> <img id="rov-img" width="100%">
     </div>
 
     <script>
@@ -217,9 +216,12 @@
             // Then, pop up details on bottom half of screen
             map.on('click', 'unclustered-point', function (e) {
                 var coordinates = e.features[0].geometry.coordinates.slice();
+                var min_ago = e.features[0].properties.min_ago;
+                var lic_plate = e.features[0].properties.lic_plate;
                 var car_deets_text = e.features[0].properties.make + " "
                     + e.features[0].properties.model + " "
                     + e.features[0].properties.year;
+                var img_link = e.features[0].properties.img_link;
 
                 // highlight the clicked element????
                 var filter = ['in', 'id', e.features[0].properties.id];
@@ -231,7 +233,12 @@
                     map.resize();
                     map.easeTo({ center: coordinates });
                 // open up the modal
-                var car_deets = document.getElementById("update-car").innerHTML=car_deets_text;
+                document.getElementById("min-ago").innerHTML=min_ago;
+                document.getElementById("nav-link").href="geo:"+coordinates[0]+","+coordinates[1];
+                document.getElementById("lic-plate").innerHTML=lic_plate;
+                document.getElementById("update-car").innerHTML=car_deets_text;
+                document.getElementById("rov-img").src=img_link;
+
                 var modal = document.getElementById("details");
                 modal.classList.remove('hide');
 
